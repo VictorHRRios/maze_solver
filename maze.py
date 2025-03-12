@@ -24,16 +24,21 @@ class Maze():
 
     def _create_cells(self):
         self._cells = []
-        for row in range(self._num_rows):
+        if self._num_rows < 1 or self._num_cols < 1:
+            raise ValueError('Number of rows and columns needs to be a positive integer')
+        if self._cell_size_x < 1 or self._cell_size_y < 1:
+            raise ValueError('Size of cells needs to be a positive integer')
+        for col in range(self._num_cols):
             row_cells = []
-            for col in range(self._num_cols):
+            for row in range(self._num_rows):
                 row_cells.append(Cell(self._win))
             self._cells.append(row_cells)
 
-        for row in range(self._num_rows):
-            for col in range(self._num_cols):
-                self._draw_cell(row, col)
-        print(self._cells)
+        if not self._win:
+            return
+        for col in range(self._num_cols):
+            for row in range(self._num_rows):
+                self._draw_cell(col, row)
     
     def _draw_cell(self, i, j):
         self._cells[i][j]._x1 = self._x1 + (self._cell_size_x * i),
@@ -65,6 +70,8 @@ class Cell():
         self._win = window
 
     def draw(self, fill_color):
+        if not self._x1 or not self._x2 or not self._y1 or not self._y1:
+            raise ValueError("No points indicated in cell")
         point_tl = Point(self._x1, self._y1)
         point_tr = Point(self._x2, self._y1)
         point_bl = Point(self._x1, self._y2)
