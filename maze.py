@@ -1,5 +1,6 @@
 from window import Point, Line
 import time
+import random
 
 class Maze():
     def __init__(
@@ -11,6 +12,7 @@ class Maze():
             cell_size_x,
             cell_size_y,
             win=None,
+            seed=None,
     ):
         self._cells = []
         self._x1 = x1
@@ -21,6 +23,7 @@ class Maze():
         self._cell_size_y = cell_size_y
         self._win = win
         self._create_cells()
+        self.seed = seed if seed else random.seed(seed) 
 
 
     def _create_cells(self):
@@ -34,12 +37,12 @@ class Maze():
                 col_cells.append(Cell(self._win))
             self._cells.append(col_cells)
 
-        if not self._win:
-            return
         for col in range(self._num_cols):
             for row in range(self._num_rows):
                 self._draw_cell(col, row)
+                print(col, row)
         self._break_entrance_and_exit()
+        self._break_walls_r(0, 0)
     
     def _draw_cell(self, i, j):
         x1 = self._x1 + (self._cell_size_x * i),
@@ -50,6 +53,8 @@ class Maze():
         self._animate()
     
     def _animate(self):
+        if not self._win:
+            return
         self._win.redraw()
         time.sleep(0.05)
     
@@ -58,6 +63,56 @@ class Maze():
         self._draw_cell(0,0)
         self._cells[-1][-1].has_bottom_wall = False
         self._draw_cell(self._num_cols-1,self._num_rows-1)
+    
+    def _break_walls_r(self, i, j):
+        self._cells[i][j].visited = True
+        while True:
+            cells_to_visit = []
+            top = j-1
+            bottom = j+1
+            right = i + 1
+            left = i - 1
+            print(i, j)
+
+            if top >= 0 and not self._cells[i][top].visited:
+                cells_to_visit.append((i, top))
+
+            if left >= 0 and not self._cells[left][j].visited:
+                cells_to_visit.append((left, j))
+
+            if bottom < self._num_rows and not self._cells[i][bottom].visited:
+                cells_to_visit.append((i, bottom))
+
+            if right < self._num_cols and not self._cells[right][j].visited:
+                cells_to_visit.append((right, j))
+            if len(cells_to_visit) == 0:
+                self._draw_cell(i,j)
+                return
+            else:
+                new_i, new_j = cells_to_visit[random.randrange(0, len(cells_to_visit))]
+                if new_j < j:
+                    self._cells[i][j].has_top_wall = False
+                    self._draw_cell(i,j)
+                    self._cells[i][top].has_bottom_wall = False
+                    self._draw_cell(i,top)
+                elif new_j > j:
+                    self._cells[i][j].has_bottom_wall = False
+                    self._draw_cell(i,j)
+                    self._cells[i][bottom].has_top_wall = False
+                    self._draw_cell(i,bottom)
+                elif new_i < i:
+                    self._cells[i][j].has_left_wall = False
+                    self._draw_cell(i,j)
+                    self._cells[left][j].has_right_wall = False
+                    self._draw_cell(left,j)
+                else:
+                    self._cells[i][j].has_right_wall = False
+                    self._draw_cell(i,j)
+                    self._cells[right][j].has_left_wall = False
+                    self._draw_cell(right,j)
+                self._break_walls_r(new_i, new_j) 
+
+
 
 
 
@@ -72,8 +127,11 @@ class Cell():
         self._x2 = None
         self._y2 = None
         self._win = window
+        self.visited = False
 
     def draw(self, x1, y1, x2, y2, fill_collor='black'):
+        if not self._win:
+            return
         self._x1 = x1
         self._y1 = y1
         self._x2 = x2
@@ -111,6 +169,8 @@ class Cell():
 
 
     def draw_move(self, to_cell, undo=False):
+        if not self._win:
+            return
         center_from_x = (self._x2 - self._x1) // 2 + self._x1
         center_from_y = (self._y2 - self._y1) // 2 + self._y1
         center_point_from = Point(center_from_x, center_from_y)
